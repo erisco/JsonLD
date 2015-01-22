@@ -129,7 +129,7 @@ class JsonLD
         $activectx = array('@base' => null);
 
         if (is_string($input)) {
-            $remoteDocument = FileGetContentsLoader::loadDocument($input);
+            $remoteDocument = $options->documentLoader->loadDocument($input);
 
             $input = $remoteDocument->document;
             $activectx['@base'] = new IRI($remoteDocument->documentUrl);
@@ -239,8 +239,10 @@ class JsonLD
      */
     private static function doCompact($input, $context = null, $options = null, $alwaysGraph = false)
     {
-        if (null !== $context) {
-            $context = Processor::loadDocument($context);
+        $options = self::mergeOptions($options);
+
+        if (null !== $context && \is_string($context)) {
+            $context = $options->documentLoader->loadDocument($context)->document;
         }
 
         if (is_object($context) && property_exists($context, '@context')) {
@@ -494,7 +496,9 @@ class JsonLD
         $options = self::mergeOptions($options);
 
         $input = self::expand($input, $options);
-        $frame = Processor::loadDocument($frame);
+        if (is_string($frame)) {
+            $frame = $options->documentLoader->loadDocument($frame)->document;
+        }
 
         if (false === is_object($frame)) {
             throw new JsonLdException(
@@ -578,8 +582,8 @@ class JsonLD
      * Merge the passed options with the options' default values.
      *
      * @param null|array|object $options The options.
-     *
      * @return object The merged options.
+     * @throws \InvalidArgumentException
      */
     private static function mergeOptions($options)
     {
@@ -592,11 +596,17 @@ class JsonLD
             'useNativeTypes' => false,
             'useRdfType' => false,
             'produceGeneralizedRdf' => false,
-            'documentFactory' => null
+            'documentFactory' => null,
+            'documentLoader' => new FileGetContentsLoader()
         );
 
         if (is_array($options) || is_object($options)) {
             $options = (object) $options;
+            // Get the documentLoader first because it is depended on later in this function.
+            if (property_exists($options, 'documentLoader') &&
+              $options->documentLoader instanceof DocumentLoaderInterface) {
+                $result->documentLoader = $options->documentLoader;
+            }
             if (isset($options->{'base'})) {
                 if (is_string($options->{'base'})) {
                     $result->base = new IRI($options->{'base'});
@@ -608,7 +618,8 @@ class JsonLD
             }
             if (property_exists($options, 'expandContext')) {
                 if (is_string($options->expandContext)) {
-                    $result->expandContext = Processor::loadDocument($options->expandContext);
+                    $result->expandContext = $result->documentLoader->loadDocument($options->expandContext)
+                      ->document;
                 } elseif (is_object($options->expandContext)) {
                     $result->expandContext = $options->expandContext;
                 }

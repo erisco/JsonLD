@@ -118,6 +118,11 @@ class Processor
     private $documentFactory = null;
 
     /**
+     * @var DocumentLoaderInterface
+     */
+    private $documentLoader;
+
+    /**
      * Constructor
      *
      * The options parameter must be passed and all off the following properties
@@ -160,6 +165,7 @@ class Processor
         $this->useRdfType = (bool) $options->useRdfType;
         $this->generalizedRdf = (bool) $options->produceGeneralizedRdf;
         $this->documentFactory = $options->documentFactory;
+        $this->documentLoader = $options->documentLoader;
     }
 
     /**
@@ -181,14 +187,14 @@ class Processor
      *
      * @throws JsonLdException
      */
-    public static function loadDocument($input)
+    public function loadDocument($input)
     {
         if (false === is_string($input)) {
             // Return as is - it has already been parsed
             return $input;
         }
 
-        $document = FileGetContentsLoader::loadDocument($input);
+        $document = $this->documentLoader->loadDocument($input);
 
         return $document->document;
     }
@@ -1760,7 +1766,7 @@ class Processor
                 $remotectxs[] = $remoteContext;
 
                 try {
-                    $remoteContext = self::loadDocument($remoteContext);
+                    $remoteContext = $this->loadDocument($remoteContext);
                 } catch (JsonLdException $e) {
                     throw new JsonLdException(
                         JsonLdException::LOADING_REMOTE_CONTEXT_FAILED,
@@ -2483,6 +2489,7 @@ class Processor
         $procOptions->useRdfType = $this->useRdfType;
         $procOptions->produceGeneralizedRdf = $this->generalizedRdf;
         $procOptions->documentFactory = $this->documentFactory;
+        $procOptions->documentLoader = new FileGetContentsLoader();
 
         $processor = new Processor($procOptions);
 

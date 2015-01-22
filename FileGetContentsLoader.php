@@ -17,7 +17,7 @@ use ML\IRI\IRI;
  *
  * @author Markus Lanthaler <mail@markus-lanthaler.com>
  */
-class FileGetContentsLoader
+class FileGetContentsLoader implements DocumentLoaderInterface
 {
     /**
      * Loads a remote document or context
@@ -28,7 +28,7 @@ class FileGetContentsLoader
      *
      * @throws JsonLdException If loading the document failed.
      */
-    public static function loadDocument($url)
+    public function loadDocument($url)
     {
         // if input looks like a file, try to retrieve it
         $input = trim($url);

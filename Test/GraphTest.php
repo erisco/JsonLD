@@ -9,6 +9,7 @@
 
 namespace ML\JsonLD\Test;
 
+use ML\JsonLD\FileGetContentsLoader;
 use ML\JsonLD\JsonLD;
 use ML\JsonLD\Processor;
 use ML\JsonLD\Document;
@@ -784,7 +785,7 @@ JSON_LD_DOCUMENT;
      */
     public function testSerializeNode()
     {
-        $expected = Processor::loadDocument(
+        $expected = (new FileGetContentsLoader())->loadDocument(
             '{
                 "@id": "http://example.com/node/1",
                 "@type": [ "http://vocab.com/type/node" ],
@@ -792,7 +793,7 @@ JSON_LD_DOCUMENT;
                 "http://vocab.com/link": [ { "@id": "http://example.com/node/2" } ],
                 "http://vocab.com/contains": [ { "@id": "_:b0" } ]
             }'
-        );
+        )->document;
 
         $node1 = $this->graph->getNode('http://example.com/node/1');
         $this->assertEquals($expected, $node1->toJsonLd(), 'Serialize node 1');
@@ -805,7 +806,7 @@ JSON_LD_DOCUMENT;
     {
         // This is the expanded and flattened version of the test document
         // (the blank node labels have been renamed from _:t... to _:b...)
-        $expected = Processor::loadDocument(
+        $expected = (new FileGetContentsLoader())->loadDocument(
             '[{
                "@id": "_:b0",
                "http://vocab.com/nested": [{
@@ -900,7 +901,7 @@ JSON_LD_DOCUMENT;
             }, {
                "@id": "http://vocab.com/type/nodeWithAliases"
             }]'
-        );
+        )->document;
 
         $this->assertEquals($expected, $this->graph->toJsonLd(false), 'Serialize graph');
     }
